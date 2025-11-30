@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -11,7 +13,28 @@ func home(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	w.Write([]byte("Hello from Snippetbox"))
+	// We are serving two templates here, so we need to define a slice that stores the path for both files
+	// it is important that we put the file that contains the base template *first* in the slice
+	// and then each template in the order that it is defined in the base template
+	files := []string{
+		"./ui/html/base.tmpl",
+		"./ui/html/partials/nav.tmpl",
+		"./ui/html/pages/home.tmpl",
+	}
+	// Still using the ParseFiles function, we can just pass a variadic parameter.
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	// Using the ExecuteTemplate function instead of Execute, where we can define which template to use, "base" in this case
+	err = ts.ExecuteTemplate(w, "base", nil)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func snippetView(w http.ResponseWriter, r *http.Request) {
